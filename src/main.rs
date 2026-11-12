@@ -66,10 +66,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let bus = pipe.bus().expect("pipeline has no bus");
 
-    pipe.set_state(gst::State::Paused)?;
-    let (res, cur, _) = pipe.state(gst::ClockTime::from_seconds(10));
-    println!("preroll: {:?}, state {:?}", res, cur);
-
     pipe.set_start_time(gst::ClockTime::NONE);
     pipe.set_base_time(gst::ClockTime::ZERO);
     pipe.set_state(gst::State::Playing)?;
