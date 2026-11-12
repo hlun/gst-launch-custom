@@ -15,13 +15,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let pipe = gst::parse::launch(&desc)?;
 
+    let bus = pipe.bus().expect("pipeline has no bus");
+
+    // Preroll first: state changes below PAUSED may reset start/base time.
+    pipe.set_state(gst::State::Paused)?;
+    let (res, cur, _pending) = pipe.state(gst::ClockTime::from_seconds(10));
+    println!("preroll: {:?}, state {:?}", res, cur);
+
     // Don't let the pipeline manage base-time itself, then pin it to 0
     // so running time == absolute clock time.
     pipe.set_start_time(gst::ClockTime::NONE);
     pipe.set_base_time(gst::ClockTime::ZERO);
 
-    let bus = pipe.bus().expect("pipeline has no bus");
     pipe.set_state(gst::State::Playing)?;
+
+    // Verify what actually took effect.
+    let clock = pipe.clock();
+    println!("start_time     = {:?}", pipe.start_time());
+    println!("base_time      = {:?}", pipe.base_time());
+    println!("clock time     = {:?}", clock.as_ref().and_then(|c| c.time()));
+    println!("running time   = {:?}", pipe.current_running_time());
 
     for msg in bus.iter_timed(gst::ClockTime::NONE) {
         use gst::MessageView;
