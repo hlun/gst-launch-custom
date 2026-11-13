@@ -13,7 +13,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    let pipe = gst::parse::launch(&desc)?;
+    //let pipe = gst::parse::launch(&desc)?;
+    let pipe = gst::parse::launch(&desc)?
+        .downcast::<gst::Pipeline>()
+        .map_err(|_| "description did not produce a pipeline")?;
+
+    // System clock disciplined by ptp4l/phc2sys. TAI matches PTP/AES67
+    // timescale (needs the kernel TAI offset to be set, see CLOCK_TAI).
+    let clock: gst::Clock = glib::Object::builder::<gst::SystemClock>()
+        .property("clock-type", gst::ClockType::Tai)
+        .build()
+        .upcast();
+    pipe.use_clock(Some(&clock));
 
     // Don't let the pipeline manage base-time itself, then pin it to 0
     // so running time == absolute clock time.

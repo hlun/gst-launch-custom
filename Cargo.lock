@@ -170,6 +170,7 @@ dependencies = [
 name = "gst-launch-custom"
 version = "0.1.0"
 dependencies = [
+ "glib",
  "gstreamer",
 ]
 
